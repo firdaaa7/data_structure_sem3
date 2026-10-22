@@ -1,3 +1,4 @@
+
 import java.util.Scanner;
 
 public class Main {
@@ -5,8 +6,10 @@ public class Main {
     public static void displayCustomer(Customer<?> customer) {
         System.out.println("Customer Name : " + customer.getName());
         System.out.println("Customer ID   : " + customer.getCustomerId());
-        System.out.println("Customer ID Type : "
-                + customer.getCustomerId().getClass().getSimpleName());
+        System.out.println(
+                "Customer ID Type : "
+                        + customer.getCustomerId().getClass().getSimpleName()
+        );
     }
 
     public static FoodCategory selectCategory(Scanner input) {
@@ -32,117 +35,113 @@ public class Main {
         }
     }
 
-    public static void main(String[] args) {
+    public static void addNewOrder(Scanner input, OrderManager manager) {
+        System.out.print("Enter Customer Name: ");
+        String name = input.nextLine();
 
+        System.out.print("Enter Customer ID: ");
+        String customerId = input.nextLine();
+
+        System.out.print("Enter Order Code: ");
+        String orderCode = input.nextLine();
+
+        if (manager.searchOrder(orderCode) != null) {
+            System.out.println("Order code already exists.");
+            return;
+        }
+
+        Customer<String> customer = new Customer<>(name, customerId);
+        FoodOrder order = new FoodOrder(orderCode, customer);
+
+        boolean addAnotherItem = true;
+
+        while (addAnotherItem) {
+            System.out.print("Enter Menu Name: ");
+            String menuName = input.nextLine();
+
+            FoodCategory category = selectCategory(input);
+            int quantity;
+
+            while (true) {
+                System.out.print("Enter Quantity: ");
+                String quantityInput = input.nextLine();
+
+                try {
+                    quantity = Integer.parseInt(quantityInput);
+
+                    if (quantity > 0) {
+                        break;
+                    }
+
+                    System.out.println("Quantity must be positive.");
+                } catch (NumberFormatException e) {
+                    System.out.println("Enter a valid whole number.");
+                }
+            }
+
+            OrderItem item = new OrderItem(menuName, category, quantity);
+            order.addItem(item);
+
+            System.out.print("Add another item to this order? (y/n): ");
+            addAnotherItem = input.nextLine().equalsIgnoreCase("y");
+        }
+
+        manager.addOrder(order);
+    }
+
+    public static void main(String[] args) {
         Scanner input = new Scanner(System.in);
         OrderManager manager = new OrderManager();
 
-        System.out.println("=== Food Ordering System ===");
+        boolean running = true;
 
-        boolean addAnotherOrder = true;
+        while (running) {
+            System.out.println("\n=== Food Ordering System ===");
+            System.out.println("1. Add Customer Order");
+            System.out.println("2. Display Active Orders");
+            System.out.println("3. Display Order Queue");
+            System.out.println("4. Process Next Order");
+            System.out.println("5. Undo Last Transaction");
+            System.out.println("6. Display Transaction History");
+            System.out.println("7. Exit");
+            System.out.print("Choose menu: ");
 
-        while (addAnotherOrder) {
+            String choice = input.nextLine();
 
-            System.out.print("\nEnter Customer Name: ");
-            String name = input.nextLine();
+            switch (choice) {
+                case "1":
+                    addNewOrder(input, manager);
+                    break;
 
-            System.out.print("Enter Customer ID: ");
-            String customerId = input.nextLine();
+                case "2":
+                    manager.displayOrders();
+                    break;
 
-            System.out.print("Enter Order Code: ");
-            String orderCode = input.nextLine();
+                case "3":
+                    manager.displayQueue();
+                    break;
 
-            Customer<String> customer =
-                    new Customer<>(name, customerId);
+                case "4":
+                    manager.processNextOrder();
+                    break;
 
-            FoodOrder order =
-                    new FoodOrder(orderCode, customer);
+                case "5":
+                    manager.undoLastTransaction();
+                    break;
 
-            boolean addAnotherItem = true;
+                case "6":
+                    manager.displayTransactionHistory();
+                    break;
 
-            while (addAnotherItem) {
+                case "7":
+                    running = false;
+                    System.out.println("Thank you for using the system.");
+                    break;
 
-                System.out.print("\nEnter Menu Name: ");
-                String menuName = input.nextLine();
-
-                FoodCategory category = selectCategory(input);
-
-                int quantity;
-
-                while (true) {
-                    System.out.print("Enter Quantity: ");
-                    String quantityInput = input.nextLine();
-
-                    try {
-                        quantity = Integer.parseInt(quantityInput);
-
-                        if (quantity > 0) {
-                            break;
-                        }
-
-                        System.out.println(
-                                "Quantity must be positive."
-                        );
-
-                    } catch (NumberFormatException e) {
-                        System.out.println(
-                                "Enter a valid whole number."
-                        );
-                    }
-                }
-
-                OrderItem item =
-                        new OrderItem(menuName, category, quantity);
-
-                order.addItem(item);
-
-                System.out.print("Add another item? (y/n): ");
-                addAnotherItem =
-                        input.nextLine().equalsIgnoreCase("y");
-            }
-
-            manager.addOrder(order);
-
-            System.out.print("Add another order? (y/n): ");
-            addAnotherOrder =
-                    input.nextLine().equalsIgnoreCase("y");
-        }
-
-        manager.displayOrders();
-
-        System.out.print("\nSearch order code: ");
-        String searchCode = input.nextLine();
-
-        FoodOrder foundOrder = manager.searchOrder(searchCode);
-
-        if (foundOrder != null) {
-            System.out.println("\n=== SEARCH RESULT ===");
-            System.out.println(
-                    "Order Code: " + foundOrder.getOrderCode()
-            );
-            displayCustomer(foundOrder.getCustomer());
-        } else {
-            System.out.println("Order not found.");
-        }
-
-        System.out.print("\nRemove an order? (y/n): ");
-
-        if (input.nextLine().equalsIgnoreCase("y")) {
-
-            System.out.print("Enter order code to remove: ");
-            String removeCode = input.nextLine();
-
-            if (manager.removeOrder(removeCode)) {
-                System.out.println(
-                        "Order removed successfully."
-                );
-            } else {
-                System.out.println("Order not found.");
+                default:
+                    System.out.println("Invalid menu choice.");
             }
         }
-
-        System.out.println("\n=== FINAL ORDER LIST ===");
-        manager.displayOrders();
 
         input.close();
     }
